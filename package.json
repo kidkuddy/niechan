@@ -1,0 +1,11 @@
+{
+  "name": "niechan",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Nie-chan — an anime visual-novel portfolio (Live2D + VOICEVOX). Base experience, no AI yet.",
+  "scripts": {
+    "dev": "node server.mjs",
+    "verify": "node verify.mjs"
+  }
+}

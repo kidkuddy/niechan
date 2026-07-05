@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nie-chan — a portfolio visual novel</title>
+  <meta name="description" content="Nie-chan, the guide of Mohamed Sofiene Barka's portfolio. An anime visual novel." />
+  <link rel="stylesheet" href="./css/style.css" />
+
+  <!-- Live2D runtimes (classic scripts, order matters):
+       Cubism Core → pixi → pixi-live2d-display -->
+  <script src="./vendor/live2dcubismcore.min.js"></script>
+  <script src="./vendor/pixi.min.js"></script>
+  <script src="./vendor/pixi-live2d-display-cubism4.min.js"></script>
+</head>
+<body>
+  <!-- title gate: the click here unlocks audio + starts the story -->
+  <div id="gate" class="gate">
+    <div class="gate-inner">
+      <h1 class="gate-title">ニーちゃん</h1>
+      <p class="gate-sub">Nie-chan — the guide of a portfolio</p>
+      <button id="start" class="gate-start" disabled>読み込み中… / loading…</button>
+      <p class="gate-note">Sound on 🔊 — she speaks Japanese with English subtitles.</p>
+    </div>
+  </div>
+
+  <main id="scene" class="scene" hidden>
+    <div id="stage" class="stage"></div>
+
+    <!-- contact card, revealed at the end of the story -->
+    <aside id="card" class="card" hidden>
+      <h2>Mohamed Sofiene Barka</h2>
+      <p class="role">Software Engineer — Systems &amp; AI Infrastructure</p>
+      <ul class="links">
+        <li><a href="mailto:mohamedsoufiane.barka@insat.ucar.tn">✉ mohamedsoufiane.barka@insat.ucar.tn</a></li>
+        <li><a href="https://github.com/Nie-Mand" target="_blank" rel="noopener">⌥ github.com/Nie-Mand</a></li>
+        <li><a href="https://www.linkedin.com/in/kidkuddy" target="_blank" rel="noopener">in linkedin.com/in/kidkuddy</a></li>
+      </ul>
+      <a class="vcard" href="./contact.vcf" download>⤓ Save contact card (.vcf)</a>
+    </aside>
+
+    <!-- dialogue box -->
+    <div id="box" class="box">
+      <div class="speaker">ニーちゃん <span class="speaker-en">Nie-chan</span></div>
+      <p id="jp" class="jp"></p>
+      <p id="en" class="en"></p>
+      <div id="choices" class="choices"></div>
+      <div id="advance-hint" class="advance-hint" hidden>▸ click / space</div>
+    </div>
+
+    <footer class="credit">
+      Voice: <b>VOICEVOX:四国めたん</b> · Avatar: Live2D sample “Hiyori” (Live2D Inc., Free Material License) —
+      placeholder for a custom Nie-chan · Music: generative (Web Audio)
+    </footer>
+  </main>
+
+  <!-- headless-verifier hook: state = loading | ready | started | contact | error -->
+  <div id="status" data-state="init" hidden></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
