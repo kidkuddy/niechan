@@ -5,71 +5,36 @@
    "VOICEVOX:四国めたん", kept in the footer). Each line resolves to a
    file via the same djb2 hash the generator used (see script.js).
 
-   BGM: a soft, generative ambient loop built with the Web Audio API —
-   no music file to license or ship. It starts on the title-gate click,
-   which is also the gesture browsers require before any audio can play.
+   BGM: a vendored, original CC0 ambient loop (audio/bgm/niechan-ambient.mp3).
+   It starts on the title-gate click — the gesture browsers require before
+   any audio can play — fades in, loops, and is muted via the mute toggle.
    ============================================================ */
 
-let ctx = null;
+const BGM_VOLUME = 0.55; // resting BGM level; the track sits under the voice
 
-/* ---- background music: a slow, warm generative pad ---- */
+/* ---- background music: the vendored ambient loop ---- */
 export function startBGM() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === 'suspended') ctx.resume();
+  const audio = new Audio('./audio/bgm/niechan-ambient.mp3');
+  audio.loop = true;
+  audio.volume = 0;
+  audio.play().catch(() => {});
 
-  const master = ctx.createGain();
-  master.gain.value = 0.0;
-  master.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 3);
-  master.connect(ctx.destination);
-
-  // gentle low-pass so the pad stays soft and never harsh
-  const lp = ctx.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 900;
-  lp.connect(master);
-
-  // A major 9 pad — a calm, hopeful colour under the dialogue
-  const pad = [220.0, 277.18, 329.63, 415.30]; // A3 C#4 E4 G#4
-  pad.forEach((f, i) => {
-    const o = ctx.createOscillator();
-    o.type = i % 2 ? 'sine' : 'triangle';
-    o.frequency.value = f;
-    const g = ctx.createGain();
-    g.gain.value = 0.25 / pad.length;
-    // slow detune drift so it breathes instead of sitting still
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.05 + i * 0.017;
-    const lfog = ctx.createGain();
-    lfog.gain.value = 1.5;
-    lfo.connect(lfog).connect(o.detune);
-    o.connect(g).connect(lp);
-    o.start();
-    lfo.start();
-  });
-
-  // sparse arpeggio twinkle every couple of seconds
-  const notes = [659.25, 783.99, 987.77, 1318.51]; // E5 G5 B5 E6
-  let step = 0;
-  const twinkle = () => {
-    if (ctx.state === 'closed') return;
-    const o = ctx.createOscillator();
-    o.type = 'sine';
-    o.frequency.value = notes[step++ % notes.length];
-    const g = ctx.createGain();
-    const now = ctx.currentTime;
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.05, now + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-    o.connect(g).connect(master);
-    o.start(now);
-    o.stop(now + 1.3);
-    setTimeout(twinkle, 1800 + Math.random() * 1400);
+  // gentle fade-in so it eases in under the opening line
+  const t0 = performance.now();
+  const fade = () => {
+    const k = Math.min(1, (performance.now() - t0) / 3000);
+    if (!audio.muted) audio.volume = BGM_VOLUME * k;
+    if (k < 1) requestAnimationFrame(fade);
   };
-  setTimeout(twinkle, 2500);
+  requestAnimationFrame(fade);
 
   return {
-    setVolume(v) { master.gain.linearRampToValueAtTime(v, ctx.currentTime + 0.4); },
-    get volume() { return master.gain.value; },
+    toggleMute() {
+      audio.muted = !audio.muted;
+      audio.volume = audio.muted ? 0 : BGM_VOLUME;
+      return audio.muted;
+    },
+    get muted() { return audio.muted; },
   };
 }
 

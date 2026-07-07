@@ -39,10 +39,18 @@ const dom = {
     setState('ready');
 
     startBtn.addEventListener('click', () => {
-      startBGM();                 // user gesture → audio unlocked
+      const bgm = startBGM();     // user gesture → audio unlocked
       gate.classList.add('gone');
       scene.hidden = false;
       setTimeout(() => { gate.remove(); }, 600);
+
+      const muteBtn = document.getElementById('mute');
+      muteBtn.addEventListener('click', () => {
+        const muted = bgm.toggleMute();
+        muteBtn.textContent = muted ? '🔇' : '♪';
+        muteBtn.classList.toggle('muted', muted);
+      });
+
       vn.start();
       setState('started');
     }, { once: true });

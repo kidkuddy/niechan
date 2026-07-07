@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nie-chan — a portfolio visual novel</title>
   <meta name="description" content="Nie-chan, the guide of Mohamed Sofiene Barka's portfolio. An anime visual novel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./css/style.css" />
 
   <!-- Live2D runtimes (classic scripts, order matters):
@@ -17,15 +20,19 @@
   <!-- title gate: the click here unlocks audio + starts the story -->
   <div id="gate" class="gate">
     <div class="gate-inner">
+      <p class="gate-kicker">The cool way — also known as Niemand</p>
       <h1 class="gate-title">ニーちゃん</h1>
       <p class="gate-sub">Nie-chan — the guide of a portfolio</p>
       <button id="start" class="gate-start" disabled>読み込み中… / loading…</button>
-      <p class="gate-note">Sound on 🔊 — she speaks Japanese with English subtitles.</p>
+      <p class="gate-note">Sound on — she speaks Japanese with English subtitles.</p>
     </div>
   </div>
 
   <main id="scene" class="scene" hidden>
     <div id="stage" class="stage"></div>
+
+    <!-- BGM mute toggle -->
+    <button id="mute" class="mute" aria-label="Mute or unmute music" title="Mute / unmute music">♪</button>
 
     <!-- contact card, revealed at the end of the story -->
     <aside id="card" class="card" hidden>
@@ -50,7 +57,7 @@
 
     <footer class="credit">
       Voice: <b>VOICEVOX:四国めたん</b> · Avatar: Live2D sample “Hiyori” (Live2D Inc., Free Material License) —
-      placeholder for a custom Nie-chan · Music: generative (Web Audio)
+      placeholder for a custom Nie-chan · Music: original ambient loop (CC0)
     </footer>
   </main>
 

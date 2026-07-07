@@ -36,15 +36,17 @@ export async function mountAvatar(container) {
     autoInteract: false, // we drive focus ourselves so it follows the whole page
   });
   app.stage.addChild(model);
-  model.anchor.set(0.5, 0.5);
+  model.anchor.set(0.5, 1.0); // anchor at her feet so she stands, grounded, in the frame
 
   function layout() {
     const w = container.clientWidth, h = container.clientHeight;
     if (w === 0 || h === 0) return; // container still hidden — wait for it to be shown
     app.renderer.resize(w, h);      // needed: we mount while the scene is display:none
+    // Big & dominant: scale her to ~full viewport height and plant her at the
+    // bottom, so the layout is anchored on her instead of a small centred figure.
     model.scale.set(1);
-    model.scale.set((h * 0.92) / model.height);
-    model.position.set(w / 2, h / 2);
+    model.scale.set((h * 1.02) / model.height);
+    model.position.set(w / 2, h * 1.03); // feet just past the bottom edge
   }
   layout();
   const ro = new ResizeObserver(layout);

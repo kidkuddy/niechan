@@ -1,14 +1,23 @@
 /* ============================================================
-   style.css — Nie-chan visual-novel styling. Warm dusk gradient,
-   soft-glass dialogue box, a title gate, and an end-of-story card.
+   style.css — Nie-chan visual novel.
+
+   Art direction: dark, editorial, elegant — cohesive with the portal
+   (niemand.vercel.app). Near-black deep gradient, Bodoni Moda serif +
+   Helvetica sans, hairline rules, one cool moonlight accent, glass panels.
+   The layout is anchored on the character: Hiyori fills the stage, large
+   and dominant, with the dialogue as a dark glass panel over her feet.
    ============================================================ */
 
 :root {
-  --ink: #23283b;
-  --paper: #fdf7f2;
-  --accent: #ff6f9c;
-  --accent-2: #7c6cff;
-  --glass: rgba(253, 247, 242, 0.86);
+  --ink: #f3f2ee;              /* off-white, matches the portal */
+  --mute: rgba(243, 242, 238, 0.5);
+  --faint: rgba(243, 242, 238, 0.32);
+  --hair: rgba(243, 242, 238, 0.16);
+  --accent: #a9c2e0;          /* restrained cool moonlight */
+  --panel: rgba(10, 11, 14, 0.62);
+  --serif: "Bodoni Moda", Didot, "Playfair Display", "Times New Roman", serif;
+  --sans: "Helvetica Neue", Arial, "Segoe UI", system-ui, sans-serif;
+  --jp: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -16,18 +25,22 @@
 html, body {
   margin: 0;
   height: 100%;
-  font-family: "Hiragino Sans", "Yu Gothic", "Segoe UI", system-ui, sans-serif;
   color: var(--ink);
-  background: #1c1030;
+  background: #070708;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
 }
+::selection { background: var(--ink); color: #070708; }
 
-/* dusk sky behind the avatar */
+/* deep dark stage — a faint cool glow rises behind the character */
 .scene, .gate {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 50% 8%, #ffd7b8 0%, #ffb0c8 24%, #b98bd6 52%, #5b4a9e 78%, #2a2050 100%);
+    radial-gradient(80% 62% at 50% 34%, rgba(80, 104, 140, 0.20) 0%, rgba(30, 38, 54, 0.10) 40%, rgba(7, 7, 8, 0) 72%),
+    radial-gradient(120% 100% at 50% 0%, #14161c 0%, #0c0d11 46%, #070708 100%);
 }
 
 /* ---- title gate ---- */
@@ -35,163 +48,280 @@ html, body {
   display: grid;
   place-items: center;
   z-index: 30;
-  transition: opacity 0.55s ease;
+  transition: opacity 0.6s ease;
 }
 .gate.gone { opacity: 0; pointer-events: none; }
 .gate-inner { text-align: center; padding: 2rem; }
+.gate-kicker {
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--mute);
+  margin: 0 0 1.4rem;
+}
 .gate-title {
+  font-family: var(--jp);
   font-size: clamp(3rem, 12vw, 7rem);
+  font-weight: 500;
   margin: 0;
-  color: #fff;
-  letter-spacing: 0.12em;
-  text-shadow: 0 4px 30px rgba(124, 108, 255, 0.6), 0 2px 6px rgba(0,0,0,0.25);
+  color: var(--ink);
+  letter-spacing: 0.1em;
+  text-shadow: 0 6px 40px rgba(120, 150, 190, 0.35);
 }
-.gate-sub { color: #fff; opacity: 0.92; margin: 0.2rem 0 2rem; font-size: 1.1rem; letter-spacing: 0.04em; }
+.gate-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--mute);
+  margin: 0.6rem 0 2.4rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
 .gate-start {
-  font: inherit;
-  font-size: 1.2rem;
-  padding: 0.85rem 2.4rem;
-  border: 0;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  box-shadow: 0 10px 30px rgba(124, 108, 255, 0.45);
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 16px 34px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  background: none;
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: background 0.28s ease, color 0.28s ease, opacity 0.2s ease;
 }
-.gate-start:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
-.gate-start:disabled { opacity: 0.6; cursor: progress; }
-.gate-note { color: #fff; opacity: 0.85; margin-top: 1.4rem; font-size: 0.9rem; }
+.gate-start:hover:not(:disabled) { background: var(--ink); color: #070708; }
+.gate-start:disabled { opacity: 0.4; cursor: progress; }
+.gate-note {
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.58rem;
+  color: var(--faint);
+  margin-top: 1.6rem;
+}
 
-/* ---- stage / avatar ---- */
+/* ---- stage / avatar: full-bleed, character-dominant ---- */
 .stage {
   position: absolute;
-  inset: 0 0 26vh 0;    /* leave room for the dialogue box */
+  inset: 0;              /* she fills the whole frame; dialogue floats over her */
   display: block;
 }
 .stage canvas { display: block; width: 100%; height: 100%; }
 
-/* ---- dialogue box ---- */
+/* ---- mute toggle (portal-style circular hairline button) ---- */
+.mute {
+  position: absolute;
+  top: 20px; right: 22px;
+  z-index: 26;
+  width: 34px; height: 34px; padding: 0;
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 50%;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; line-height: 1;
+  transition: border-color 0.25s ease, transform 0.3s ease, opacity 0.25s ease;
+}
+.mute:hover { border-color: var(--ink); transform: scale(1.06); }
+.mute:focus-visible { outline: none; border-color: var(--ink); }
+.mute.muted { opacity: 0.55; }
+
+/* ---- dialogue box: dark glass panel ---- */
 .box {
   position: absolute;
   left: 50%;
-  bottom: 2.2vh;
+  bottom: 3vh;
   transform: translateX(-50%);
-  width: min(920px, 94vw);
-  min-height: 20vh;
-  padding: 1.1rem 1.5rem 1.4rem;
-  background: var(--glass);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 18px;
-  box-shadow: 0 18px 50px rgba(43, 32, 80, 0.4);
+  width: min(940px, 94vw);
+  min-height: 18vh;
+  padding: 1.2rem 1.6rem 1.5rem;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid var(--hair);
+  border-top: 1px solid rgba(243, 242, 238, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
   cursor: pointer;
   z-index: 20;
 }
 .speaker {
-  font-weight: 700;
+  font-family: var(--jp);
+  font-weight: 600;
   color: var(--accent);
-  font-size: 1.05rem;
-  margin-bottom: 0.35rem;
+  font-size: 1.02rem;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.02em;
 }
-.speaker-en { color: var(--accent-2); font-weight: 600; font-size: 0.8rem; opacity: 0.8; }
-.jp { font-size: 1.5rem; line-height: 1.5; margin: 0.1rem 0 0.35rem; min-height: 2.2em; }
-.en { font-size: 1rem; color: #5a6072; margin: 0; min-height: 1.2em; }
+.speaker-en {
+  font-family: var(--sans);
+  color: var(--faint);
+  font-weight: 500;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  margin-left: 0.4rem;
+}
+.jp {
+  font-family: var(--jp);
+  font-size: 1.5rem;
+  line-height: 1.55;
+  margin: 0.1rem 0 0.4rem;
+  min-height: 2.2em;
+  color: var(--ink);
+}
+.en {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.02rem;
+  color: var(--mute);
+  margin: 0;
+  min-height: 1.2em;
+}
 
 .advance-hint {
   position: absolute;
-  right: 1.2rem;
-  bottom: 0.7rem;
-  font-size: 0.8rem;
-  color: var(--accent-2);
-  animation: bob 1.1s ease-in-out infinite;
+  right: 1.3rem;
+  bottom: 0.8rem;
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.62rem;
+  color: var(--accent);
+  animation: bob 1.2s ease-in-out infinite;
 }
-@keyframes bob { 50% { transform: translateY(3px); opacity: 0.6; } }
+@keyframes bob { 50% { transform: translateY(3px); opacity: 0.55; } }
 
 /* ---- choices / hub / name form ---- */
-.choices { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.7rem; }
+.choices { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.85rem; }
 .choice {
   font: inherit;
   text-align: left;
-  padding: 0.6rem 1rem;
-  border: 1.5px solid rgba(124, 108, 255, 0.35);
-  border-radius: 12px;
-  background: #fff;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background: rgba(243, 242, 238, 0.03);
+  color: var(--ink);
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.14s ease, border-color 0.16s ease, background 0.16s ease;
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
 }
-.choice:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 6px 16px rgba(255, 111, 156, 0.25); }
-.choice.primary { border-color: var(--accent); background: linear-gradient(120deg, #fff, #ffeef4); }
-.c-jp { font-weight: 600; }
-.c-en { font-size: 0.82rem; color: #7a7f90; }
+.choice:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: rgba(169, 194, 224, 0.08);
+}
+.choice.primary { border-color: rgba(169, 194, 224, 0.55); }
+.c-jp { font-family: var(--jp); font-weight: 600; font-size: 0.98rem; }
+.c-en { font-family: var(--sans); font-size: 0.72rem; color: var(--mute); letter-spacing: 0.02em; }
 
-.name-form { display: flex; gap: 0.6rem; margin-top: 0.7rem; width: 100%; }
+.name-form { display: flex; gap: 0.6rem; margin-top: 0.85rem; width: 100%; }
 .name-form input {
-  font: inherit;
+  font-family: var(--jp);
+  font-size: 1rem;
   flex: 1;
-  padding: 0.6rem 0.9rem;
-  border: 1.5px solid rgba(124, 108, 255, 0.4);
-  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background: rgba(243, 242, 238, 0.04);
+  color: var(--ink);
 }
+.name-form input::placeholder { color: var(--faint); }
 .name-form input:focus { outline: none; border-color: var(--accent); }
 .name-form button {
-  font: inherit;
-  padding: 0.6rem 1.3rem;
-  border: 0;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  color: var(--ink);
+  background: none;
   cursor: pointer;
+  transition: background 0.24s ease, color 0.24s ease;
 }
+.name-form button:hover { background: var(--ink); color: #070708; }
 
-/* ---- contact card ---- */
+/* ---- contact card: dark glass, editorial ---- */
 .card {
   position: absolute;
-  top: 6vh;
+  top: 8vh;
   right: 4vw;
   width: min(340px, 88vw);
-  padding: 1.4rem 1.6rem;
-  background: var(--paper);
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 20px 60px rgba(43, 32, 80, 0.45);
+  padding: 1.5rem 1.7rem;
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid var(--hair);
+  border-top: 1px solid rgba(243, 242, 238, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.6);
   z-index: 25;
-  animation: cardIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  animation: cardIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1.1);
 }
-@keyframes cardIn { from { transform: translateY(-14px) scale(0.96); opacity: 0; } }
-.card h2 { margin: 0 0 0.2rem; font-size: 1.3rem; }
-.card .role { margin: 0 0 1rem; color: var(--accent-2); font-weight: 600; font-size: 0.9rem; }
-.card .links { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.5rem; }
-.card .links a { color: var(--ink); text-decoration: none; font-size: 0.92rem; }
+@keyframes cardIn { from { transform: translateY(-14px) scale(0.97); opacity: 0; } }
+.card h2 { font-family: var(--serif); font-weight: 500; margin: 0 0 0.25rem; font-size: 1.3rem; }
+.card .role {
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin: 0 0 1.2rem;
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 0.66rem;
+}
+.card .links { list-style: none; padding: 0; margin: 0 0 1.2rem; display: grid; gap: 0.55rem; }
+.card .links a {
+  font-family: var(--sans);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.86rem;
+  transition: color 0.18s ease;
+}
 .card .links a:hover { color: var(--accent); }
 .card .vcard {
   display: inline-block;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  color: #fff;
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  font-weight: 500;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  color: var(--ink);
   text-decoration: none;
-  font-size: 0.9rem;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  transition: background 0.24s ease, color 0.24s ease;
 }
+.card .vcard:hover { background: var(--ink); color: #070708; }
 
 /* ---- footer credit ---- */
 .credit {
   position: absolute;
   left: 50%;
-  bottom: 0.4rem;
+  bottom: 0.5rem;
   transform: translateX(-50%);
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.52rem;
+  color: var(--faint);
   text-align: center;
   z-index: 10;
   width: 96vw;
   pointer-events: none;
 }
-.credit a, .credit b { pointer-events: auto; }
+.credit a, .credit b { pointer-events: auto; color: var(--mute); }
 
 @media (max-width: 640px) {
   .jp { font-size: 1.2rem; }
-  .card { top: auto; bottom: 30vh; right: 3vw; }
+  .card { top: auto; bottom: 32vh; right: 3vw; }
 }
