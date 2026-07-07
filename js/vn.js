@@ -17,7 +17,7 @@ import { playVoice, playTTS, stopVoice } from './audio.js';
 const TYPE_MS = 34; // per-character typing speed
 
 export function createVN({ avatar, dom, onContact }) {
-  const state = { nodeId: null, lineIdx: 0, name: 'Anon', askHistory: [] };
+  const state = { nodeId: null, lineIdx: 0, name: 'Anon', askHistory: [], mode: 'tour' };
   let typing = null;      // interval while text reveals
   let awaiting = false;   // true when a full line is shown, waiting for a click
   let dynamicActive = false; // true while an AI-generated (non-SCRIPT) line owns the box
@@ -106,6 +106,11 @@ export function createVN({ avatar, dom, onContact }) {
     renderAskBox();
   }
 
+  // Chat-mode hub: just the ask box — NO guided topic buttons (those are the
+  // scripted tour's sentences; chat shouldn't reuse them).
+  function chatHub() { clearChoices(); renderAskBox(); }
+  const afterAnswer = () => (state.mode === 'chat' ? chatHub() : renderHub());
+
   /* ---- AI free-input: a text box beside the authored hub choices ---- */
   function renderAskBox() {
     const form = document.createElement('form');
@@ -175,13 +180,16 @@ export function createVN({ avatar, dom, onContact }) {
       if (!res.ok || (!data.jp && !data.en)) throw new Error(data.error || 'ask failed');
     } catch (e) {
       await showDynamic({ jp: 'ごめん、頭が一瞬フリーズしちゃった……もう一回いい？', en: 'Sorry — my brain froze for a second. Try again?', emote: 'sad' });
-      return renderHub();
+      return afterAnswer();
     }
-    state.askHistory.push({ q: question, a: data.en || data.jp || '' });
+    const summary = (data.lines || []).map((l) => l.en || l.jp).join(' ');
+    state.askHistory.push({ q: question, a: summary });
     if (state.askHistory.length > 6) state.askHistory.shift();
-    await showDynamic(data);
+    // deliver the answer one sentence at a time — each voiced on its own, so a
+    // long reply never waits on one big TTS synth.
+    for (const seg of (data.lines || [])) await showDynamic({ jp: seg.jp, en: seg.en, emote: data.emote });
     if (data.in_scope === false) return renderContactForm(question);
-    return renderHub();
+    return afterAnswer();
   }
 
   /* ---- out-of-scope → leave-a-message (delivered to Telegram) ---- */
@@ -199,7 +207,7 @@ export function createVN({ avatar, dom, onContact }) {
       `</div>`;
     if (state.name && state.name !== 'Anon') form.querySelector('[name=name]').value = state.name;
     form.querySelector('[name=message]').value = question;
-    form.querySelector('.msg-cancel').onclick = () => renderHub();
+    form.querySelector('.msg-cancel').onclick = () => afterAnswer();
     form.onsubmit = async (e) => {
       e.preventDefault();
       const message = form.querySelector('[name=message]').value.trim();
@@ -221,7 +229,7 @@ export function createVN({ avatar, dom, onContact }) {
       } catch { ok = false; }
       if (ok) await showDynamic({ jp: 'ちゃんと送っておいたよ！お返事、待っててね。', en: "Sent it — he'll get back to you. Thanks for reaching out!", emote: 'happy' });
       else await showDynamic({ jp: 'うう、うまく送れなかった……直接メールしてくれる？ dnd@niemand.online', en: "Ugh, that didn't go through. Could you email him directly? dnd@niemand.online", emote: 'sad' });
-      renderHub();
+      afterAnswer();
     };
     dom.choices.appendChild(form);
     setTimeout(() => { const t = form.querySelector('[name=message]'); if (t) t.focus(); }, 50);
@@ -286,9 +294,10 @@ export function createVN({ avatar, dom, onContact }) {
   // Chat path: skip the scripted tour — a quick greeting, then the hub (topic
   // buttons + ask box). Same grounded /api/ask under the hood, minimal framing.
   async function startChat() {
-    await showDynamic({ jp: 'やっほー！彼のこと、何でも聞いてね。トピックを選んでもいいよ。', en: 'Hey! Ask me anything about him — or tap a topic.', emote: 'happy' });
-    renderHub();
+    state.mode = 'chat';
+    await showDynamic({ jp: 'やっほー！わたしはニーちゃん。彼のこと、なんでも聞いてね。', en: "Hey! I'm Nie-chan. Ask me anything about him.", emote: 'happy' });
+    chatHub();
   }
 
-  return { start: () => enter('intro'), startChat };
+  return { start: () => { state.mode = 'tour'; enter('intro'); }, startChat };
 }

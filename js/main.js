@@ -45,8 +45,8 @@ const dom = {
     setState('ready');
     const tourBtn = document.getElementById('start');
     const chatBtn = document.getElementById('start-chat');
-    tourBtn.disabled = false; tourBtn.textContent = '▸ 案内 / guided tour';
-    chatBtn.disabled = false; chatBtn.textContent = '💬 チャット / just chat';
+    tourBtn.hidden = true;   // guided disabled for now — chat is the way in
+    chatBtn.disabled = false; chatBtn.textContent = '▸ はじめる / start';
 
     let begun = false;
     const begin = (mode) => {
