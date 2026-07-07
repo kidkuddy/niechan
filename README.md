@@ -6,18 +6,47 @@ The **Cool** version of the portfolio. **Nie-chan** (from *Niemand* — German f
 generative background music, and walks them through Mohamed Sofiene Barka's
 career to a contact card.
 
-This is the **base experience** — an authored, branching visual novel. **No AI
-yet**; that arrives in a later ticket. The dialogue graph is plain data, so AI
-answer nodes and new routes slot in without touching the engine.
+On top of the authored, branching visual novel there's an **AI ask box**: the
+visitor can ask anything, and Nie-chan answers in character, grounded in the data
+plane and guardrailed so she never overclaims. Out-of-scope questions (salary,
+private details, anything unknown) convert into a **leave-a-message** CTA that
+reaches Sofiene on Telegram — the conversion, not a dead end.
 
 ## Run it
 
 ```bash
-npm run dev      # → http://localhost:8138
+npm run dev      # static only → http://localhost:8138 (no /api functions)
+vercel dev       # full app incl. /api/ask + /api/contact (needs env, see below)
 npm run verify   # headless Chrome: loads, starts, drives to the contact card
+npm run test:ai  # offline: provider fallback + answer parsing
 ```
 
-No build step — it's static files. Deploy is `vercel` from this directory.
+No build step — static files + Vercel serverless functions in `api/`. Deploy is
+`vercel` from this directory.
+
+## AI layer
+
+| Route | What it does |
+|-------|--------------|
+| `POST /api/ask` | `{ question, history }` → fetches the dossier from the data plane (with `X-Api-Key` for gated dates), builds a guardrailed prompt, calls the provider chain, returns `{ jp, en, emote, in_scope }`. Text-only for v1 (voiced by the VOICEVOX ticket later). |
+| `POST /api/contact` | `{ name, contact, message }` → runs shouldknowaboutyou's 2-step token flow (`POST /token` → `POST /message`) → Telegram. Server-side because that service sets no CORS headers. |
+
+- **Providers with fallback** (`lib/providers.js`): primary **Gemini**, fallback
+  **GitHub Models**, behind one `chat()` interface. A dead/absent primary falls
+  through transparently. Adding or reordering a provider is one line in
+  `PROVIDERS`.
+- **Guardrails** (`lib/answer.js`): the Nie-chan persona + the load-bearing
+  framing constraints from `master.md` (never lead/principal/solely; agency
+  clients anonymized; Offmon pre-launch; *implemented* — not designed — the
+  encryption spec; never present gated/unfinished work as accomplishments). The
+  data-plane content is already framed correctly at the source; these are the
+  second belt. Unparseable / unknown → `in_scope:false` → the message CTA.
+
+### Env
+
+Set in the Vercel project (see `.env.example`): `GEMINI_API_KEY`,
+`GITHUB_MODELS_TOKEN`, and `SHOULDKNOWABOUTME_API_KEY` (the data plane's
+`SECRET`, optional — without it answers ground on public content).
 
 ## How it fits together
 
@@ -29,6 +58,8 @@ No build step — it's static files. Deploy is `vercel` from this directory.
 | `js/live2d.js` | the avatar (Live2D *Hiyori* placeholder) — cursor-follow, per-line expression, lip-sync |
 | `js/audio.js` | pre-baked VOICEVOX voice playback + generative Web-Audio BGM |
 | `js/main.js` | bootstrap: mount avatar, wire the title gate, start the story |
+| `api/ask.js` · `api/contact.js` | serverless: the AI answer + the message CTA |
+| `lib/providers.js` · `lib/answer.js` | provider fallback + guardrailed prompt/parser |
 | `audio/` | pre-baked VOICEVOX clips, keyed by a djb2 hash of the spoken line |
 | `models/live2d/hiyori/` | the Hiyori Live2D sample model |
 | `vendor/` | pixi.js + pixi-live2d-display + Live2D Cubism Core (vendored, offline) |

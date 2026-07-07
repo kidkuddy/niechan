@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Nie-chan — an anime visual-novel portfolio (Live2D + VOICEVOX). Base experience, no AI yet.",
+  "description": "Nie-chan — an anime visual-novel portfolio (Live2D + VOICEVOX) with a guardrailed AI ask box + contact CTA.",
   "scripts": {
     "dev": "node server.mjs",
-    "verify": "node verify.mjs"
+    "verify": "node verify.mjs",
+    "test:ai": "node test/ai.test.mjs"
   }
 }

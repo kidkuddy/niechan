@@ -17,9 +17,11 @@ import { playVoice, stopVoice } from './audio.js';
 const TYPE_MS = 34; // per-character typing speed
 
 export function createVN({ avatar, dom, onContact }) {
-  const state = { nodeId: null, lineIdx: 0, name: 'Anon' };
+  const state = { nodeId: null, lineIdx: 0, name: 'Anon', askHistory: [] };
   let typing = null;      // interval while text reveals
   let awaiting = false;   // true when a full line is shown, waiting for a click
+  let dynamicActive = false; // true while an AI-generated (non-SCRIPT) line owns the box
+  let dynamicClick = null;   // click handler for the current dynamic line (null = swallow clicks)
 
   const fill = (s) => s.replace(/\{name\}/g, state.name);
 
@@ -64,6 +66,7 @@ export function createVN({ avatar, dom, onContact }) {
   }
 
   function advance() {
+    if (dynamicActive) { if (dynamicClick) dynamicClick(); return; } // AI line owns the box
     if (typing) { finishTyping(); awaiting = true; dom.advanceHint.hidden = false; return; }
     if (!awaiting) return;
     awaiting = false;
@@ -100,6 +103,116 @@ export function createVN({ avatar, dom, onContact }) {
   function renderHub() {
     clearChoices();
     renderChoices(HUB_CHOICES);
+    renderAskBox();
+  }
+
+  /* ---- AI free-input: a text box beside the authored hub choices ---- */
+  function renderAskBox() {
+    const form = document.createElement('form');
+    form.className = 'ask-form';
+    form.innerHTML =
+      `<input id="ask-in" maxlength="200" placeholder="…or ask me anything / 何でも聞いてね" autocomplete="off" />` +
+      `<button type="submit" aria-label="ask">▸</button>`;
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const q = form.querySelector('#ask-in').value.trim();
+      if (q) askFlow(q);
+    };
+    dom.choices.appendChild(form);
+  }
+
+  // Show an AI-generated line (no pre-baked voice — text-only for v1). Resolves
+  // when the visitor advances past it, so askFlow can sequence lines.
+  function showDynamic(line) {
+    return new Promise((resolve) => {
+      clearChoices();
+      dynamicActive = true;
+      let typed = false;
+      dom.en.textContent = line.en || '';
+      avatar.setEmote(line.emote || 'neutral');
+      dom.jp.dataset.full = line.jp || '';
+      typeLine(line.jp || '', () => { typed = true; dom.advanceHint.hidden = false; });
+      dynamicClick = () => {
+        if (!typed) { finishTyping(); typed = true; dom.advanceHint.hidden = false; return; }
+        dynamicActive = false; dynamicClick = null; dom.advanceHint.hidden = true; resolve();
+      };
+    });
+  }
+
+  function showThinking() {
+    clearChoices();
+    dynamicActive = true; dynamicClick = null; // swallow clicks while the model works
+    if (typing) { clearInterval(typing); typing = null; }
+    avatar.setEmote('neutral');
+    dom.jp.textContent = '……';
+    dom.en.textContent = 'thinking…';
+    dom.advanceHint.hidden = true;
+  }
+
+  async function askFlow(question) {
+    dom.card.hidden = true;
+    showThinking();
+    let data;
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question, history: state.askHistory.slice(-3) }),
+      });
+      data = await res.json();
+      if (!res.ok || (!data.jp && !data.en)) throw new Error(data.error || 'ask failed');
+    } catch (e) {
+      await showDynamic({ jp: 'ごめん、頭が一瞬フリーズしちゃった……もう一回いい？', en: 'Sorry — my brain froze for a second. Try again?', emote: 'sad' });
+      return renderHub();
+    }
+    state.askHistory.push({ q: question, a: data.en || data.jp || '' });
+    if (state.askHistory.length > 6) state.askHistory.shift();
+    await showDynamic(data);
+    if (data.in_scope === false) return renderContactForm(question);
+    return renderHub();
+  }
+
+  /* ---- out-of-scope → leave-a-message (delivered to Telegram) ---- */
+  function renderContactForm(question) {
+    clearChoices();
+    const form = document.createElement('form');
+    form.className = 'msg-form';
+    form.innerHTML =
+      `<input name="name" maxlength="40" placeholder="お名前 / your name" autocomplete="name" />` +
+      `<input name="contact" maxlength="80" placeholder="メール等 / email or handle — so he can reply" autocomplete="email" />` +
+      `<textarea name="message" maxlength="600" rows="3" placeholder="メッセージ / your message"></textarea>` +
+      `<div class="msg-actions">` +
+        `<button type="button" class="msg-cancel">やめる / cancel</button>` +
+        `<button type="submit" class="msg-send primary">送る ▸ send</button>` +
+      `</div>`;
+    if (state.name && state.name !== 'Anon') form.querySelector('[name=name]').value = state.name;
+    form.querySelector('[name=message]').value = question;
+    form.querySelector('.msg-cancel').onclick = () => renderHub();
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const message = form.querySelector('[name=message]').value.trim();
+      if (!message) { form.querySelector('[name=message]').focus(); return; }
+      const btn = form.querySelector('.msg-send');
+      btn.disabled = true; btn.textContent = '送信中… / sending';
+      let ok = false;
+      try {
+        const r = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            name: form.querySelector('[name=name]').value.trim(),
+            contact: form.querySelector('[name=contact]').value.trim(),
+            message,
+          }),
+        });
+        ok = r.ok;
+      } catch { ok = false; }
+      if (ok) await showDynamic({ jp: 'ちゃんと送っておいたよ！お返事、待っててね。', en: "Sent it — he'll get back to you. Thanks for reaching out!", emote: 'happy' });
+      else await showDynamic({ jp: 'うう、うまく送れなかった……直接メールしてくれる？ dnd@niemand.online', en: "Ugh, that didn't go through. Could you email him directly? dnd@niemand.online", emote: 'sad' });
+      renderHub();
+    };
+    dom.choices.appendChild(form);
+    setTimeout(() => { const t = form.querySelector('[name=message]'); if (t) t.focus(); }, 50);
   }
 
   function pick(goto) {
@@ -140,6 +253,8 @@ export function createVN({ avatar, dom, onContact }) {
   function restart() {
     stopVoice();
     state.name = 'Anon';
+    state.askHistory = [];
+    dynamicActive = false; dynamicClick = null;
     dom.card.hidden = true;
     enter('intro');
   }
