@@ -53,8 +53,10 @@ export function playVoice(key) {
   });
 }
 
-// ponytail: local voicebox; change this to the hosted URL once it's deployed.
-const VOICEBOX_URL = 'http://localhost:5252';
+// ponytail: config-driven. Prod sets window.VOICEBOX_URL to the hosted VM in
+// index.html (single config point); dev falls back to the local engine.
+const VOICEBOX_URL =
+  (typeof window !== 'undefined' && window.VOICEBOX_URL) || 'http://localhost:5252';
 
 /* ---- voice: synthesize + play a dynamic (AI) line via voicebox, since it has
    no pre-baked clip. Audio element = cross-origin media playback, no CORS.

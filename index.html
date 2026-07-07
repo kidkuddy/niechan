@@ -73,6 +73,9 @@
   <!-- headless-verifier hook: state = loading | ready | started | contact | error -->
   <div id="status" data-state="init" hidden></div>
 
+  <!-- Hosted TTS (NIE-44). Uncomment + set to the public voicebox URL in prod;
+       omit for local dev (js/audio.js falls back to http://localhost:5252). -->
+  <!-- <script>window.VOICEBOX_URL = 'https://voicebox.example.com';</script> -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
