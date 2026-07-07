@@ -23,6 +23,14 @@ const dom = {
   card: document.getElementById('card'),
 };
 
+// Info modal — independent of the story.
+(function chrome() {
+  const modal = document.getElementById('info-modal');
+  document.getElementById('info').addEventListener('click', () => { modal.hidden = false; });
+  document.getElementById('info-close').addEventListener('click', () => { modal.hidden = true; });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; });
+})();
+
 (async () => {
   try {
     setState('loading');
@@ -34,12 +42,16 @@ const dom = {
       onContact: () => setState('contact'),
     });
 
-    startBtn.disabled = false;
-    startBtn.textContent = 'はじめる ▸ start';
     setState('ready');
+    const tourBtn = document.getElementById('start');
+    const chatBtn = document.getElementById('start-chat');
+    tourBtn.disabled = false; tourBtn.textContent = '▸ 案内 / guided tour';
+    chatBtn.disabled = false; chatBtn.textContent = '💬 チャット / just chat';
 
-    startBtn.addEventListener('click', () => {
-      const bgm = startBGM();     // user gesture → audio unlocked
+    let begun = false;
+    const begin = (mode) => {
+      if (begun) return; begun = true;                 // user gesture → audio unlocked
+      const bgm = startBGM();
       gate.classList.add('gone');
       scene.hidden = false;
       setTimeout(() => { gate.remove(); }, 600);
@@ -51,9 +63,11 @@ const dom = {
         muteBtn.classList.toggle('muted', muted);
       });
 
-      vn.start();
+      if (mode === 'chat') vn.startChat(); else vn.start();
       setState('started');
-    }, { once: true });
+    };
+    tourBtn.addEventListener('click', () => begin('tour'));
+    chatBtn.addEventListener('click', () => begin('chat'));
   } catch (e) {
     console.error(e);
     setState('error', String(e && e.message || e));

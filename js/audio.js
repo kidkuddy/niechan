@@ -53,6 +53,30 @@ export function playVoice(key) {
   });
 }
 
+// ponytail: local voicebox; change this to the hosted URL once it's deployed.
+const VOICEBOX_URL = 'http://localhost:5252';
+
+/* ---- voice: synthesize + play a dynamic (AI) line via voicebox, since it has
+   no pre-baked clip. Audio element = cross-origin media playback, no CORS.
+   Shares `current` with playVoice, so stopVoice covers it. Voicebox down →
+   onerror → silent, story keeps going. ---- */
+export function playTTS(text, onStart) {
+  return new Promise((resolve) => {
+    if (current) { current.pause(); current = null; }
+    let started = false;
+    const kick = () => { if (!started) { started = true; if (onStart) onStart(); } };
+    if (!text) { kick(); return resolve(); }
+    // speaker=0 → 四国めたん あまあま, matching the pre-baked authored clips.
+    const a = new Audio(`${VOICEBOX_URL}/tts?text=${encodeURIComponent(text)}&speaker=0`);
+    current = a;
+    a.onplaying = kick;                 // start typing exactly when the voice starts
+    a.onended = () => { if (current === a) current = null; resolve(); };
+    a.onerror = () => { kick(); if (current === a) current = null; resolve(); };
+    setTimeout(kick, 6000);             // safety: voicebox reachable-but-slow → reveal anyway (unreachable errors fast)
+    a.play().catch(() => { kick(); resolve(); });
+  });
+}
+
 export function stopVoice() {
   if (current) { current.pause(); current = null; }
 }

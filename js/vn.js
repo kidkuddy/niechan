@@ -12,7 +12,7 @@
 import {
   SCRIPT, HUB_CHOICES, REACTIONS, audioText, lineKey, cleanSpoken,
 } from './script.js';
-import { playVoice, stopVoice } from './audio.js';
+import { playVoice, playTTS, stopVoice } from './audio.js';
 
 const TYPE_MS = 34; // per-character typing speed
 
@@ -121,21 +121,31 @@ export function createVN({ avatar, dom, onContact }) {
     dom.choices.appendChild(form);
   }
 
-  // Show an AI-generated line (no pre-baked voice — text-only for v1). Resolves
-  // when the visitor advances past it, so askFlow can sequence lines.
+  // Show an AI-generated line. No pre-baked clip, so it's voiced live via
+  // voicebox (silent fallback if voicebox is down). Resolves when the visitor
+  // advances past it, so askFlow can sequence lines.
   function showDynamic(line) {
     return new Promise((resolve) => {
       clearChoices();
       dynamicActive = true;
       let typed = false;
-      dom.en.textContent = line.en || '';
-      avatar.setEmote(line.emote || 'neutral');
-      dom.jp.dataset.full = line.jp || '';
-      typeLine(line.jp || '', () => { typed = true; dom.advanceHint.hidden = false; });
-      dynamicClick = () => {
-        if (!typed) { finishTyping(); typed = true; dom.advanceHint.hidden = false; return; }
-        dynamicActive = false; dynamicClick = null; dom.advanceHint.hidden = true; resolve();
+      // Keep the thinking face + …… visible until the voice is actually ready
+      // (TTS synth takes a beat), then reveal text and play voice together — no
+      // early English subtitle, no desync. reveal() fires on voice-start (or the
+      // safety timeout / error if voicebox is slow/down).
+      const reveal = () => {
+        avatar.setEmote(line.emote || 'neutral');
+        dom.en.textContent = line.en || '';
+        dom.jp.dataset.full = line.jp || '';
+        typeLine(line.jp || '', () => { typed = true; dom.advanceHint.hidden = false; });
+        dynamicClick = () => {
+          if (!typed) { finishTyping(); typed = true; dom.advanceHint.hidden = false; return; }
+          stopVoice(); avatar.setSpeaking(false);
+          dynamicActive = false; dynamicClick = null; dom.advanceHint.hidden = true; resolve();
+        };
       };
+      avatar.setSpeaking(true);
+      playTTS(line.jp || '', reveal).finally(() => avatar.setSpeaking(false));
     });
   }
 
@@ -143,10 +153,12 @@ export function createVN({ avatar, dom, onContact }) {
     clearChoices();
     dynamicActive = true; dynamicClick = null; // swallow clicks while the model works
     if (typing) { clearInterval(typing); typing = null; }
-    avatar.setEmote('neutral');
+    avatar.setEmote('thinking');
     dom.jp.textContent = '……';
     dom.en.textContent = 'thinking…';
     dom.advanceHint.hidden = true;
+    avatar.setSpeaking(true);
+    playTTS('んー……');   // a spoken "hmm" while she thinks; replaced when the answer voice starts
   }
 
   async function askFlow(question) {
@@ -271,5 +283,12 @@ export function createVN({ avatar, dom, onContact }) {
     }
   });
 
-  return { start: () => enter('intro') };
+  // Chat path: skip the scripted tour — a quick greeting, then the hub (topic
+  // buttons + ask box). Same grounded /api/ask under the hood, minimal framing.
+  async function startChat() {
+    await showDynamic({ jp: 'やっほー！彼のこと、何でも聞いてね。トピックを選んでもいいよ。', en: 'Hey! Ask me anything about him — or tap a topic.', emote: 'happy' });
+    renderHub();
+  }
+
+  return { start: () => enter('intro'), startChat };
 }

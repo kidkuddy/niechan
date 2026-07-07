@@ -386,3 +386,24 @@ html, body {
   .jp { font-size: 1.2rem; }
   .card { top: auto; bottom: 32vh; right: 3vw; }
 }
+
+/* --- info button + modal + character switcher (added tweaks) --- */
+.mute.info { right: 62px; } /* sit left of the ♪ mute button */
+.modal {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-items: center;
+  background: rgba(6, 8, 16, 0.6); backdrop-filter: blur(4px);
+}
+.modal[hidden] { display: none; }
+.modal-card {
+  position: relative; max-width: 440px; margin: 20px;
+  padding: 22px 26px; border-radius: 16px;
+  background: rgba(20, 22, 34, 0.92); border: 1px solid rgba(255,255,255,0.12);
+  color: #e7e7ee; font-size: 14px; line-height: 1.55; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.modal-card p { margin: 6px 0; }
+.modal-close {
+  position: absolute; top: 8px; right: 12px; border: 0; background: none;
+  color: #aab; font-size: 22px; cursor: pointer; line-height: 1;
+}
+.gate-choices { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }

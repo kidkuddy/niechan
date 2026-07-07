@@ -19,9 +19,10 @@ const EMOTES = {
   relaxed:   { mouthForm: 0.5,  eyeSmile: 0.5, cheek: 0.3, brow: 0.1 },
   surprised: { mouthForm: 0.0,  eyeSmile: 0.0, cheek: 0.0, brow: 1.0 },
   sad:       { mouthForm: -0.8, eyeSmile: 0.0, cheek: 0.0, brow: -0.7 },
+  thinking:  { mouthForm: -0.3, eyeSmile: 0.0, cheek: 0.0, brow: 0.6 },
 };
 
-export async function mountAvatar(container) {
+export async function mountAvatar(container, model3 = './models/live2d/hiyori/Hiyori.model3.json') {
   const PIXI = window.PIXI;
   const app = new PIXI.Application({
     resizeTo: container,
@@ -32,7 +33,7 @@ export async function mountAvatar(container) {
   });
   container.appendChild(app.view);
 
-  const model = await PIXI.live2d.Live2DModel.from('./models/live2d/hiyori/Hiyori.model3.json', {
+  const model = await PIXI.live2d.Live2DModel.from(model3, {
     autoInteract: false, // we drive focus ourselves so it follows the whole page
   });
   app.stage.addChild(model);
